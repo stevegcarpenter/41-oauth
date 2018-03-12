@@ -14,8 +14,8 @@
 
 ## Requirements  
 #### Configuration  
-* make a copy of slugchat-backend-starter-code in the `/lab-<yourname>/slugchat-backend` directory
-* create a `/lab-<yourname>/slugchat-frontend` directory
+* make a copy of a previous backend project (not sluggram) that uses authorization in the `/lab-<yourname>/something-backend` directory
+* make a copy of a previous frontend project (not sluggram) in the `/lab-<yourname>/something-frontend` directory
 
 #### Feature Tasks  
 
