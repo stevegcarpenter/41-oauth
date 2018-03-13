@@ -73,6 +73,7 @@ module.exports = function(router) {
         const token = tokenRes.body.access_token;
         if (!token) res.redirect(process.env.CLIENT_URL);
 
+        console.log('gtoken:', token);
         // send google token to openId/google+ to get user/profile
         return superagent.get(OPEN_ID_URL)
           .set('Authorization', `Bearer ${token}`);
@@ -82,8 +83,28 @@ module.exports = function(router) {
         console.log(openIdRes.body);
         // create token / account / find account
         // create cookie, send cookie / token
-        res.cookie('X-401d21-OAuth-Token', 'Fake Token!');
-        res.redirect(process.env.CLIENT_URL);
+        const username = openIdRes.body.name.trim().toLowerCase().replace(/\s+/g, '_');
+        Auth.findOne({username})
+          .then(dbUser => {
+            // if the user doesn't exist make one
+            if (!dbUser) {
+              console.log('Creating new user!');
+              new Auth({
+                username,
+                email: openIdRes.body.email,
+              }).save()
+                .then(user => user.generateToken())
+                .then(token => res.cookie('X-401d21-OAuth-Token', token))
+                .then(() => res.redirect(process.env.CLIENT_URL))
+                .catch(err => errorHandler(err, res));
+            } else {
+              console.log('Found a user!', dbUser);
+              const token = dbUser.generateToken();
+              res.cookie('X-401d21-OAuth-Token', token);
+              res.redirect(process.env.CLIENT_URL);
+            }
+          })
+          .catch(err => console.log('error:', err));
       })
       .catch(err => {
         console.log('__ERROR__', err.message);

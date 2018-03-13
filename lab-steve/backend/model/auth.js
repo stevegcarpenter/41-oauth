@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 const Auth = mongoose.Schema({
   username: {type: String, required: true, unique: true},
-  password: {type: String, required: true},
+  password: {type: String},
   email: {type: String, required: true},
   compareHash: {type: String, unique: true},
 }, {timestamps: true});
