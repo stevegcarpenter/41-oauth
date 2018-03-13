@@ -51,9 +51,7 @@ module.exports = function(router) {
     }
 
     // code is truthy
-    console.log('__CODE__', req.query.code);
-    // sgc - step 3.1
-    console.log('step 3.1');
+    // sgc - oauth step 3.1
 
     // add client id & secret to code from google
     return superagent.post(GOOGLE_OAUTH_URL)
@@ -66,23 +64,17 @@ module.exports = function(router) {
         redirect_uri: `${process.env.API_URL}/oauth/google`,
       })
       .then(tokenRes => {
-        // sgc - step 3.2
-        console.log('step 3.2 - GOOGLE TOKEN');
+        // sgc - oauth step 3.2
 
         // extract google token from request
         const token = tokenRes.body.access_token;
         if (!token) res.redirect(process.env.CLIENT_URL);
 
-        console.log('gtoken:', token);
         // send google token to openId/google+ to get user/profile
         return superagent.get(OPEN_ID_URL)
           .set('Authorization', `Bearer ${token}`);
       })
       .then(openIdRes => {
-        console.log('openId Response');
-        console.log(openIdRes.body);
-        // create token / account / find account
-        // create cookie, send cookie / token
         const username = openIdRes.body.name.trim().toLowerCase().replace(/\s+/g, '_');
         Auth.findOne({username})
           .then(user => {
@@ -94,30 +86,9 @@ module.exports = function(router) {
           .then(token => {
             res.cookie('X-401d21-OAuth-Token', token);
             res.redirect(process.env.CLIENT_URL);
-          })
-          // .then(dbUser => {
-          //   // if the user doesn't exist make one
-          //   if (!dbUser) {
-          //     console.log('Creating new user!');
-          //     new Auth({
-          //       username,
-          //       email: openIdRes.body.email,
-          //     }).save()
-          //       .then(user => user.generateToken())
-          //       .then(token => res.cookie('X-401d21-OAuth-Token', token))
-          //       .then(() => res.redirect(process.env.CLIENT_URL))
-          //       .catch(err => errorHandler(err, res));
-          //   } else {
-          //     console.log('Found a user!', dbUser);
-          //     const token = dbUser.generateToken();
-          //     res.cookie('X-401d21-OAuth-Token', token);
-          //     res.redirect(process.env.CLIENT_URL);
-          //   }
-          // })
-          .catch(err => console.log('error:', err));
+          });
       })
-      .catch(err => {
-        console.log('__ERROR__', err.message);
+      .catch(() => {
         res.cookie('X-401d21-OAuth-Token','');
         res.redirect(process.env.CLIENT_URL + '?error=oauth'); // TODO: Add error configuration
       });
