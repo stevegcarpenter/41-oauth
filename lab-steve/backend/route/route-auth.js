@@ -85,25 +85,35 @@ module.exports = function(router) {
         // create cookie, send cookie / token
         const username = openIdRes.body.name.trim().toLowerCase().replace(/\s+/g, '_');
         Auth.findOne({username})
-          .then(dbUser => {
-            // if the user doesn't exist make one
-            if (!dbUser) {
-              console.log('Creating new user!');
-              new Auth({
-                username,
-                email: openIdRes.body.email,
-              }).save()
-                .then(user => user.generateToken())
-                .then(token => res.cookie('X-401d21-OAuth-Token', token))
-                .then(() => res.redirect(process.env.CLIENT_URL))
-                .catch(err => errorHandler(err, res));
-            } else {
-              console.log('Found a user!', dbUser);
-              const token = dbUser.generateToken();
-              res.cookie('X-401d21-OAuth-Token', token);
-              res.redirect(process.env.CLIENT_URL);
+          .then(user => {
+            if (!user) {
+              user = new Auth({ username, email: openIdRes.body.email });
             }
+            return user.generateToken();
           })
+          .then(token => {
+            res.cookie('X-401d21-OAuth-Token', token);
+            res.redirect(process.env.CLIENT_URL);
+          })
+          // .then(dbUser => {
+          //   // if the user doesn't exist make one
+          //   if (!dbUser) {
+          //     console.log('Creating new user!');
+          //     new Auth({
+          //       username,
+          //       email: openIdRes.body.email,
+          //     }).save()
+          //       .then(user => user.generateToken())
+          //       .then(token => res.cookie('X-401d21-OAuth-Token', token))
+          //       .then(() => res.redirect(process.env.CLIENT_URL))
+          //       .catch(err => errorHandler(err, res));
+          //   } else {
+          //     console.log('Found a user!', dbUser);
+          //     const token = dbUser.generateToken();
+          //     res.cookie('X-401d21-OAuth-Token', token);
+          //     res.redirect(process.env.CLIENT_URL);
+          //   }
+          // })
           .catch(err => console.log('error:', err));
       })
       .catch(err => {
